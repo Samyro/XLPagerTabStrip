@@ -43,10 +43,40 @@ public enum SelectedBarVerticalAlignment {
     case bottom
 }
 
+open class ButtonBarSelectedBar: UIView {
+    let gradientLayer = CAGradientLayer()
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+        commonInit()
+    }
+    
+    public required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        commonInit()
+    }
+    
+    func commonInit() {
+        gradientLayer.frame = CGRect(origin: CGPoint.zero, size: self.frame.size)
+        gradientLayer.locations = [0.0, 1.0]
+        gradientLayer.colors = [UIColor(red: 1, green: 200/255, blue: 0, alpha: 1).cgColor, UIColor(red: 238/255, green: 134/255, blue: 1/255, alpha: 1).cgColor]
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 0)
+        self.layer.addSublayer(gradientLayer)
+        self.clipsToBounds = true
+    }
+    
+    open override func layoutSubviews() {
+        super.layoutSubviews()
+        gradientLayer.frame = CGRect(origin: CGPoint.zero, size: self.frame.size)
+    }
+    
+}
+
 open class ButtonBarView: UICollectionView {
 
     open lazy var selectedBar: UIView = { [unowned self] in
-        let bar  = UIView(frame: CGRect(x: 0, y: self.frame.size.height - CGFloat(self.selectedBarHeight), width: 0, height: CGFloat(self.selectedBarHeight)))
+        let bar  = ButtonBarSelectedBar(frame: CGRect(x: 0, y: self.frame.size.height - CGFloat(self.selectedBarHeight), width: 0, height: CGFloat(self.selectedBarHeight)))
+        bar.layer.cornerRadius = bar.frame.size.height/2
         bar.layer.zPosition = 9999
         return bar
     }()
