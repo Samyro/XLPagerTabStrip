@@ -41,6 +41,7 @@ public enum SelectedBarVerticalAlignment {
     case top
     case middle
     case bottom
+    case underText
 }
 
 open class ButtonBarSelectedBar: UIView {
@@ -74,6 +75,8 @@ open class ButtonBarSelectedBar: UIView {
 
 open class ButtonBarView: UICollectionView {
 
+    var font: UIFont?
+    
     open lazy var selectedBar: UIView = { [unowned self] in
         let bar  = ButtonBarSelectedBar(frame: CGRect(x: 0, y: self.frame.size.height - CGFloat(self.selectedBarHeight), width: 0, height: CGFloat(self.selectedBarHeight)))
         bar.layer.cornerRadius = bar.frame.size.height/2
@@ -86,7 +89,7 @@ open class ButtonBarView: UICollectionView {
             updateSelectedBarYPosition()
         }
     }
-    var selectedBarVerticalAlignment: SelectedBarVerticalAlignment = .bottom
+    var selectedBarVerticalAlignment: SelectedBarVerticalAlignment = .underText
     var selectedBarAlignment: SelectedBarAlignment = .center
     var selectedIndex = 0
 
@@ -107,8 +110,17 @@ open class ButtonBarView: UICollectionView {
 
     open func move(fromIndex: Int, toIndex: Int, progressPercentage: CGFloat, pagerScroll: PagerScroll) {
         selectedIndex = progressPercentage > 0.5 ? toIndex : fromIndex
-
-        let fromFrame = layoutAttributesForItem(at: IndexPath(item: fromIndex, section: 0))!.frame
+        
+        var fromFrame = layoutAttributesForItem(at: IndexPath(item: fromIndex, section: 0))!.frame
+        if selectedBarVerticalAlignment == .underText {
+            if let fromCell = self.cellForItem(at: IndexPath(item: fromIndex, section: 0)) as? ButtonBarViewCell {
+                if let theText = fromCell.label.text, let theFont = fromCell.label.font {
+                    let theBounds =  NSString(string: theText).boundingRect(with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: theFont.lineHeight), options: .usesLineFragmentOrigin, attributes: [NSAttributedStringKey.font : theFont], context: nil)
+                    fromFrame = CGRect(x: fromFrame.origin.x+(fromFrame.width-theBounds.width)/2, y: fromFrame.origin.y+fromFrame.height/2+theBounds.height/2+2, width: theBounds.width, height: 0)
+                }
+            }
+        }
+        
         let numberOfItems = dataSource!.collectionView(self, numberOfItemsInSection: 0)
 
         var toFrame: CGRect
@@ -124,13 +136,22 @@ open class ButtonBarView: UICollectionView {
         } else {
             toFrame = layoutAttributesForItem(at: IndexPath(item: toIndex, section: 0))!.frame
         }
-
+        
+        if selectedBarVerticalAlignment == .underText {
+            if let fromCell = self.cellForItem(at: IndexPath(item: toIndex, section: 0)) as? ButtonBarViewCell {
+                if let theText = fromCell.label.text, let theFont = fromCell.label.font {
+                    let theBounds =  NSString(string: theText).boundingRect(with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: theFont.lineHeight), options: .usesLineFragmentOrigin, attributes: [NSAttributedStringKey.font : theFont], context: nil)
+                    toFrame = CGRect(x: toFrame.origin.x+(toFrame.width-theBounds.width)/2, y: 0, width: theBounds.width, height: 0)
+                }
+            }
+        }
+        
         var targetFrame = fromFrame
         targetFrame.size.height = selectedBar.frame.size.height
         targetFrame.size.width += (toFrame.size.width - fromFrame.size.width) * progressPercentage
         targetFrame.origin.x += (toFrame.origin.x - fromFrame.origin.x) * progressPercentage
 
-        selectedBar.frame = CGRect(x: targetFrame.origin.x, y: selectedBar.frame.origin.y, width: targetFrame.size.width, height: selectedBar.frame.size.height)
+        selectedBar.frame = targetFrame
 
         var targetContentOffset: CGFloat = 0.0
         if contentSize.width > frame.size.width {
@@ -154,6 +175,15 @@ open class ButtonBarView: UICollectionView {
 
         selectedBarFrame.size.width = selectedCellFrame.size.width
         selectedBarFrame.origin.x = selectedCellFrame.origin.x
+        
+        if selectedBarVerticalAlignment == .underText {
+            if let toCell = self.cellForItem(at: selectedCellIndexPath) as? ButtonBarViewCell {
+                if let theText = toCell.label.text, let theFont = toCell.label.font {
+                    let theBounds =  NSString(string: theText).boundingRect(with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: theFont.lineHeight), options: .usesLineFragmentOrigin, attributes: [NSAttributedStringKey.font : theFont], context: nil)
+                    selectedBarFrame = CGRect(x: selectedBarFrame.origin.x+(selectedBarFrame.width-theBounds.width)/2, y: selectedBarFrame.origin.y, width: theBounds.width, height: selectedBarFrame.height)
+                }
+            }
+        }
 
         if animated {
             UIView.animate(withDuration: 0.3, animations: { [weak self] in
@@ -208,6 +238,10 @@ open class ButtonBarView: UICollectionView {
             selectedBarFrame.origin.y = (frame.size.height - selectedBarHeight) / 2
         case .bottom:
             selectedBarFrame.origin.y = frame.size.height - selectedBarHeight
+        case .underText:
+            if let theFont = font {
+                selectedBarFrame.origin.y = frame.size.height/2 + theFont.lineHeight/2 + 2
+            }
         }
 
         selectedBarFrame.size.height = selectedBarHeight

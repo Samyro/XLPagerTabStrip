@@ -50,7 +50,7 @@ public struct ButtonBarPagerTabStripSettings {
 
         public var selectedBarBackgroundColor = UIColor.black
         public var selectedBarHeight: CGFloat = 5
-        public var selectedBarVerticalAlignment: SelectedBarVerticalAlignment = .bottom
+        public var selectedBarVerticalAlignment: SelectedBarVerticalAlignment = .underText
 
         public var buttonBarItemBackgroundColor: UIColor?
         public var buttonBarItemFont = UIFont.systemFont(ofSize: 18)
@@ -123,6 +123,7 @@ open class ButtonBarPagerTabStripViewController: PagerTabStripViewController, Pa
                 flowLayout.scrollDirection = .horizontal
                 let buttonBarHeight = settings.style.buttonBarHeight ?? 44
                 let buttonBar = ButtonBarView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: buttonBarHeight), collectionViewLayout: flowLayout)
+                buttonBar.font = settings.style.buttonBarItemFont
                 buttonBar.backgroundColor = .orange
                 buttonBar.selectedBar.backgroundColor = .black
                 buttonBar.autoresizingMask = .flexibleWidth
